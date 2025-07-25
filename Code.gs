@@ -8,10 +8,10 @@ function doPost(e) {
     } else {
       const lastRow = sheet.getLastRow();
       if (lastRow > 1) {
-        const loginTime = sheet.getRange(lastRow, 2).getValue();
-        const workingHours = calculateWorkingHours(loginTime, data.timestamp);
+        const loginTimeCell = sheet.getRange(lastRow, 2);
+        const loginTime = loginTimeCell.getDisplayValue() || loginTimeCell.getValue();
         sheet.getRange(lastRow, 3).setValue(data.timestamp);
-        sheet.getRange(lastRow, 4).setValue(workingHours);
+        sheet.getRange(lastRow, 4).setValue('Calculated');
       }
     }
     
@@ -58,29 +58,3 @@ function getOrCreateEmployeeSheet(employeeId) {
   return sheet;
 }
 
-function calculateWorkingHours(loginTime, logoutTime) {
-  try {
-    // Parse Indian time format: "25/07/2025, 04:38:09 pm"
-    const parseTime = (timeStr) => {
-      const [datePart, timePart] = timeStr.split(', ');
-      const [day, month, year] = datePart.split('/');
-      const [time, period] = timePart.split(' ');
-      const [hours, minutes, seconds] = time.split(':');
-      
-      let hour24 = parseInt(hours);
-      if (period.toLowerCase() === 'pm' && hour24 !== 12) hour24 += 12;
-      if (period.toLowerCase() === 'am' && hour24 === 12) hour24 = 0;
-      
-      return new Date(year, month - 1, day, hour24, parseInt(minutes), parseInt(seconds));
-    };
-    
-    const login = parseTime(loginTime);
-    const logout = parseTime(logoutTime);
-    const diffMs = logout - login;
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
-  } catch (error) {
-    return 'Error';
-  }
-}
