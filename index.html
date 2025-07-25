@@ -28,7 +28,24 @@
 
     <script>
         // Replace with your Google Apps Script Web App URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwd0ZzrbR9uDiSAQf9Df319SkZMR_ubUne4heCC10EfUGOW-1j7Uo3J8jFPt7CFezGisQ/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwU2MWidyGILy2gc0S3NHTXZ248XMbSgP0OKPcHFSirwSSYMQoRfiYbTd1Evhx7oUL2Mw/exec';
+        
+        // Check if URL is configured
+        if (SCRIPT_URL === 'YOUR_GOOGLE_SCRIPT_URL') {
+            document.body.innerHTML = `
+                <div style="text-align: center; margin: 50px; font-family: Arial;">
+                    <h2>⚠️ Configuration Required</h2>
+                    <p>Please set up Google Apps Script first:</p>
+                    <ol style="text-align: left; display: inline-block;">
+                        <li>Create Google Sheet</li>
+                        <li>Add Apps Script code</li>
+                        <li>Deploy as Web App</li>
+                        <li>Replace SCRIPT_URL in index.html</li>
+                    </ol>
+                    <p><strong>For testing:</strong> Open test-local.html instead</p>
+                </div>
+            `;
+        }
 
         function getIndianTime() {
             return new Date().toLocaleString('en-IN', {
@@ -68,11 +85,11 @@
                     showMessage(`${type.toUpperCase()} recorded at ${timestamp}`, 'success');
                     document.getElementById('employeeId').value = '';
                 } else {
-                    throw new Error('Failed to save attendance');
+                    throw new Error(`Server responded with status: ${response.status}`);
                 }
             } catch (error) {
-                showMessage('Error recording attendance. Please try again.', 'error');
-                console.error(error);
+                showMessage(`Error: ${error.message}`, 'error');
+                console.error('Full error:', error);
             }
         }
 
