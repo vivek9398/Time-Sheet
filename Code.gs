@@ -1,14 +1,19 @@
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const sheet = getOrCreateSheet();
+    const sheet = getOrCreateEmployeeSheet(data.employeeId);
     
-    sheet.appendRow([
-      data.employeeId,
-      data.type,
-      data.timestamp,
-      data.date
-    ]);
+    if (data.type === 'login') {
+      sheet.appendRow([data.date, data.timestamp, '', '']);
+    } else {
+      const lastRow = sheet.getLastRow();
+      if (lastRow > 1) {
+        const loginTime = sheet.getRange(lastRow, 2).getValue();
+        const workingHours = calculateWorkingHours(loginTime, data.timestamp);
+        sheet.getRange(lastRow, 3).setValue(data.timestamp);
+        sheet.getRange(lastRow, 4).setValue(workingHours);
+      }
+    }
     
     return ContentService
       .createTextOutput(JSON.stringify({success: true}))
@@ -41,14 +46,27 @@ function doOptions(e) {
     });
 }
 
-function getOrCreateSheet() {
-  const sheetName = 'Attendance';
+function getOrCreateEmployeeSheet(employeeId) {
+  const sheetName = `Employee_${employeeId}`;
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
   
   if (!sheet) {
     sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet(sheetName);
-    sheet.getRange(1, 1, 1, 4).setValues([['Employee ID', 'Type', 'Timestamp', 'Date']]);
+    sheet.getRange(1, 1, 1, 4).setValues([['Date', 'Login Time', 'Logout Time', 'Working Hours']]);
   }
   
   return sheet;
+}
+
+function calculateWorkingHours(loginTime, logoutTime) {
+  try {
+    const login = new Date(loginTime.replace(/,/g, ''));
+    const logout = new Date(logoutTime.replace(/,/g, ''));
+    const diffMs = logout - login;
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  } catch (error) {
+    return 'Error calculating';
+  }
 }
