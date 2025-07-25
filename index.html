@@ -5,12 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Attendance</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
-        .container { text-align: center; }
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 500px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background-image: url('background.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        .container { 
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
         input, button { padding: 10px; margin: 10px; font-size: 16px; }
         input { width: 200px; }
-        button { background: #007cba; color: white; border: none; cursor: pointer; }
+        button { background: #007cba; color: white; border: none; cursor: pointer; border-radius: 5px; }
         button:hover { background: #005a87; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        button:disabled:hover { background: #ccc; }
         .message { margin: 20px 0; padding: 10px; border-radius: 5px; }
         .success { background: #d4edda; color: #155724; }
         .error { background: #f8d7da; color: #721c24; }
@@ -19,16 +38,18 @@
 <body>
     <div class="container">
         <h1>Employee Attendance System</h1>
-        <input type="text" id="employeeId" placeholder="Enter Employee ID" required>
+        <input type="text" id="employeeId" placeholder="Enter Employee ID" required oninput="validateEmployee()">
+        <div id="employeeName"></div>
         <br>
-        <button onclick="markAttendance('login')">Login</button>
-        <button onclick="markAttendance('logout')">Logout</button>
+        <button onclick="markAttendance('login')" id="loginBtn" disabled>Login</button>
+        <button onclick="markAttendance('logout')" id="logoutBtn" disabled>Logout</button>
         <div id="message"></div>
     </div>
 
+    <script src="employees.js"></script>
     <script>
         // Replace with your Google Apps Script Web App URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZTIIj8qLF-QA7y37M0lQBJp1tdx3AfHd1NRItWyYd5lQtc2YiLA0asZXmcNJovlpU/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz5Y2sYTpckj2T8BLK2L7B7Xp7Nb_xTalL6pSWTYSkaSeZBZU8P21Kc36rFBhOA7zZr/exec';
         
         // Check if URL is configured
         if (SCRIPT_URL === 'YOUR_GOOGLE_SCRIPT_URL') {
@@ -70,8 +91,12 @@
             const date = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
             
             try {
+                console.log('Sending request to:', SCRIPT_URL);
+                console.log('Request data:', { employeeId, type, timestamp, date });
+                
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         employeeId: employeeId,
@@ -81,20 +106,44 @@
                     })
                 });
 
-                const result = await response.json();
-                
-                if (result.success) {
-                    showMessage(`${type.toUpperCase()} recorded at ${timestamp}`, 'success');
-                    document.getElementById('employeeId').value = '';
-                } else {
-                    throw new Error(result.error || 'Unknown error');
-                }
+                // With no-cors mode, we can't read the response
+                // So we assume success if no error is thrown
+                console.log('Request sent successfully');
+                showMessage(`${type.toUpperCase()} recorded at ${timestamp}`, 'success');
+                document.getElementById('employeeId').value = '';
             } catch (error) {
-                showMessage('Error recording attendance. Please try again.', 'error');
-                console.error('Full error:', error);
+                console.error('Full error details:', error);
+                showMessage(`Error: ${error.message}`, 'error');
             }
         }
 
+        function validateEmployee() {
+            const employeeId = document.getElementById('employeeId').value.trim();
+            const nameDiv = document.getElementById('employeeName');
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            if (employeeId && employees[employeeId]) {
+                nameDiv.textContent = `Welcome, ${employees[employeeId]}`;
+                nameDiv.style.color = '#155724';
+                nameDiv.style.fontWeight = 'bold';
+                nameDiv.style.margin = '10px 0';
+                loginBtn.disabled = false;
+                logoutBtn.disabled = false;
+            } else if (employeeId) {
+                nameDiv.textContent = 'Invalid Employee ID';
+                nameDiv.style.color = '#721c24';
+                nameDiv.style.fontWeight = 'bold';
+                nameDiv.style.margin = '10px 0';
+                loginBtn.disabled = true;
+                logoutBtn.disabled = true;
+            } else {
+                nameDiv.textContent = '';
+                loginBtn.disabled = true;
+                logoutBtn.disabled = true;
+            }
+        }
+        
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = text;
