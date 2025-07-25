@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Attendance</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
+        .container { text-align: center; }
+        input, button { padding: 10px; margin: 10px; font-size: 16px; }
+        input { width: 200px; }
+        button { background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a87; }
+        .message { margin: 20px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Attendance System</h1>
+        <input type="text" id="employeeId" placeholder="Enter Employee ID" required>
+        <br>
+        <button onclick="markAttendance('login')">Login</button>
+        <button onclick="markAttendance('logout')">Logout</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // Replace with your Google Apps Script Web App URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8XcjQoKcRmsG-xsp8bcKGxcpt38jH__0JsmXnMRZugAEzecyZ8eIVIxvz16F0kYtc3g/exec';
+
+        function getIndianTime() {
+            return new Date().toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        async function markAttendance(type) {
+            const employeeId = document.getElementById('employeeId').value.trim();
+            if (!employeeId) {
+                showMessage('Please enter Employee ID', 'error');
+                return;
+            }
+
+            const timestamp = getIndianTime();
+            const date = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: employeeId,
+                        type: type,
+                        timestamp: timestamp,
+                        date: date
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage(`${type.toUpperCase()} recorded at ${timestamp}`, 'success');
+                    document.getElementById('employeeId').value = '';
+                } else {
+                    throw new Error('Failed to save attendance');
+                }
+            } catch (error) {
+                showMessage('Error recording attendance. Please try again.', 'error');
+                console.error(error);
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            setTimeout(() => messageDiv.textContent = '', 3000);
+        }
+    </script>
+</body>
+</html>
