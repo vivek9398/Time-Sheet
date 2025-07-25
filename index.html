@@ -72,7 +72,6 @@
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         employeeId: employeeId,
@@ -82,10 +81,14 @@
                     })
                 });
 
-                // With no-cors mode, we can't read the response, so assume success
-                showMessage(`${type.toUpperCase()} recorded at ${timestamp}`, 'success');
-                document.getElementById('employeeId').value = '';
+                const result = await response.json();
                 
+                if (result.success) {
+                    showMessage(`${type.toUpperCase()} recorded at ${timestamp}`, 'success');
+                    document.getElementById('employeeId').value = '';
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
             } catch (error) {
                 showMessage('Error recording attendance. Please try again.', 'error');
                 console.error('Full error:', error);
