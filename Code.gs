@@ -60,13 +60,27 @@ function getOrCreateEmployeeSheet(employeeId) {
 
 function calculateWorkingHours(loginTime, logoutTime) {
   try {
-    const login = new Date(loginTime.replace(/,/g, ''));
-    const logout = new Date(logoutTime.replace(/,/g, ''));
+    // Parse Indian time format: "25/07/2025, 04:38:09 pm"
+    const parseTime = (timeStr) => {
+      const [datePart, timePart] = timeStr.split(', ');
+      const [day, month, year] = datePart.split('/');
+      const [time, period] = timePart.split(' ');
+      const [hours, minutes, seconds] = time.split(':');
+      
+      let hour24 = parseInt(hours);
+      if (period.toLowerCase() === 'pm' && hour24 !== 12) hour24 += 12;
+      if (period.toLowerCase() === 'am' && hour24 === 12) hour24 = 0;
+      
+      return new Date(year, month - 1, day, hour24, parseInt(minutes), parseInt(seconds));
+    };
+    
+    const login = parseTime(loginTime);
+    const logout = parseTime(logoutTime);
     const diffMs = logout - login;
     const hours = Math.floor(diffMs / (1000 * 60 * 60));
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
   } catch (error) {
-    return 'Error calculating';
+    return 'Error';
   }
 }
